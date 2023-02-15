@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Llama Eye Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="w3.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <style>
+    html,
+    body,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+      font-family: "Raleway", sans-serif;
+    }
+  </style>
+  <style>
+    .container {
+      max-width: 820px;
+      margin: 0px auto;
+      margin-top: 50px;
+    }
+
+    .comment {
+      float: left;
+      width: 100%;
+      height: auto;
+    }
+
+    .commenter {
+      float: left;
+    }
+
+    .commenter img {
+      width: 35px;
+      height: 35px;
+    }
+
+    .comment-text-area {
+      float: left;
+      width: 100%;
+      height: auto;
+    }
+
+    .textinput {
+      float: left;
+      width: 100%;
+      min-height: 75px;
+      outline: none;
+      resize: none;
+      border: 1px solid grey;
+    }
+  </style>
+</head>
+
+<body class="w3-light-grey">
+  <!-- Top container -->
+  <div class="w3-bar w3-top w3-black w3-large" style="z-index: 4">
+    <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();">
+      <i class="fa fa-bars"></i>  Menu
+    </button>
+    <span class="w3-bar-item w3-right">%[WebTool]%</span>
+  </div>
+
+  <!-- Sidebar/menu -->
+  <nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index: 3; width: 300px" id="mySidebar">
+    <br />
+    <div class="w3-container" style="background-color: black">
+      <img src="logo.webp" style="width: 100%" />
+    </div>
+    <hr />
+    <div class="w3-container">
+      <h5>Dashboard</h5>
+    </div>
+    <div class="w3-bar-block">
+      <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black"
+        onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
+        <a href="index.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-users fa-fw"></i> System</a>
+        <a href="logs_ai.html" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fa fa-file fa-fw"></i>  Termianl AI</a>
+        <a href="edit.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-bell fa-fw"></i>  SDCard Files</a>
+        <a href="update.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-history fa-fw"></i>  Update FW</a>
+        <a href="settings.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-cog fa-fw"></i> Settings</a>
+        </a><br/><br/>
+    </div>
+  </nav>
+  <!-- Overlay effect when opening sidebar on small screens -->
+  <div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor: pointer"
+    title="close side menu" id="myOverlay"></div>
+  <!-- !PAGE CONTENT! -->
+  <div class="w3-main" style="margin-left: 300px; margin-top: 43px">
+    <!-- Header -->
+    <header class="w3-container" style="padding-top: 22px">
+      <h5>
+        <b><i class="fa fa-dashboard"></i> K210 Serial Output</b>
+      </h5>
+    </header>
+    <div class="w3-container">
+      <textarea readonly id="k210_log" name="k210_log" rows="22" cols="110" class="textinput"
+        style="resize:none; overflow-y: scroll">  </textarea>
+    </div>
+    <div class="w3-container">
+      <div class="w3-row">
+        <!-- <div class="w3-twothird">
+          <input id="k210_cmd" name="k210_cmd" class="w3-input w3-border w3-medium" size="90" >
+        </div> -->
+        <div class="w3-third">
+          <!-- <button id="send_bt" class="w3-button w3-black" onclick="send_fun()">Send</button> -->
+          <button id="clear_bt" class="w3-button w3-black" onclick="clear_fun()">Clear</button>
+          <button id="stop_bt" class="w3-button  w3-green" onclick="stop_start_fun()">Start</button>
+          <button id="stop_bt" class="w3-button  w3-blue" onclick="rts_fun()">Reset</button>
+          <button class="w3-button w3-teal"
+            onclick=saveTextAsFile(k210_log.value,"k210_log.txt")>Download</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <script src="scripts.js"></script>
+  <script src="k210_log.js"></script>
+  </script>
+</body>
+</html>
