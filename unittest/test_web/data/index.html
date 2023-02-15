@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Llama Eye Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="w3.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arial" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <style>
+    html,
+    body,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+      font-family: "Raleway", sans-serif;
+    }
+  </style>
+
+</head>
+
+<body class="w3-light-grey">
+  <!-- Top container -->
+  <div class="w3-bar w3-top w3-black w3-large" style="z-index: 4">
+    <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();">
+      <i class="fa fa-bars"></i>  Menu
+    </button>
+    <span class="w3-bar-item w3-right">%[WebTool]%</span>
+  </div>
+
+  <!-- Sidebar/menu -->
+  <nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index: 3; width: 300px" id="mySidebar">
+    <br />
+    <div class="w3-container w3-row">
+      <img src="logo.webp" style="width: 100%" />
+      <div class="w3-col s4"></div>
+    </div>
+    <hr />
+    <div class="w3-container">
+      <h5>Dashboard</h5>
+    </div>
+    <div class="w3-bar-block">
+      <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black"
+        onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
+      <a href="index.html" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fa fa-users fa-fw"></i> System</a>
+      <a href="logs_ai.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-file fa-fw"></i>  Termianl AI</a>
+      <a href="edit.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-bell fa-fw"></i>  SDCard Files</a>
+      <a href="update.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-history fa-fw"></i>  Update FW</a>
+      <a href="settings.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-cog fa-fw"></i> Settings</a>
+      <br /><br />
+    </div>
+  </nav>
+
+  <!-- Overlay effect when opening sidebar on small screens -->
+  <div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor: pointer"
+    title="close side menu" id="myOverlay"></div>
+
+  <!-- !PAGE CONTENT! -->
+  <div class="w3-main" style="margin-left: 300px; margin-top: 43px">
+    <!-- Header -->
+    <header class="w3-container" style="padding-top: 22px">
+      <h5>
+        <b><i class="fa fa-dashboard"></i> My Dashboard</b>
+      </h5>
+    </header>
+    <div class="w3-row-padding w3-margin-bottom ">
+      <div class="w3-third">
+        <div>
+          <h2>
+            AI Aplication
+          </h2>
+        </div>
+        <div class="w3-container">
+          <div class="w3-half">
+            <input class="w3-select" type="text" id="app_name" placeholder="App Name" value="" readonly disabled>
+          </div>
+          <div class="w3-half">
+
+          </div>
+        </div>
+        <br>
+        <!-- <button class="w3-button w3-ripple w3-teal" onclick=run_app()>Run Code</button> -->
+        <button id="capture_bt" class="w3-button w3-ripple w3-green" onclick=start_capture()>Start Capture</button>
+        <button id="clear_bt" class="w3-button w3-ripple w3-black" onclick="rastart_app()">Restart</button>
+        <button id="stop_bt" class="w3-button w3-ripple w3-red" onclick="stop_app()">Stop</button>
+        <br>
+        <div>
+
+        </div>
+      </div>
+      <div class="w3-twothird">
+        <h2>WebTool Status</h2>
+        <table id="status-table" class="w3-table w3-striped w3-white">
+          <tr>
+            <td>Up Time.</td>
+            <td><i id="uptime"></i>s</td>
+          </tr>
+          <tr>
+            <td>Available RAM.</td>
+            <td><i id="ram"></i>Kb</td>
+          </tr>
+
+          <tr>
+            <td>WiFi RSSI.</td>
+            <td><i id='rssi'></i>dB</td>
+          </tr>
+        </table>
+      </div>
+      <div class="w3-container w3-row-padding w3-margin-bottom "></div>
+      <div class="w3-third">
+        <h2>Webtool Verion</h2>
+
+        <table id="status-table" class="w3-table w3-striped w3-white">
+          <tr>
+            <td>Release</td>
+            <td><i id="w_release"></i></td>
+          </tr>
+          <tr>
+            <td>Version</td>
+            <td><i id='w_version'></i></td>
+          </tr>
+          <tr>
+            <td>Compilation Date.</td>
+            <td><i id='w_date'></i></td>
+          </tr>
+        </table>
+      </div>
+      <div class="w3-third">
+
+        <h2>Firmware Version</h2>
+
+        <table id="status-table" class="w3-table w3-striped w3-white">
+          <tr>
+            <td>Release</td>
+            <td><i id="f_release"></i></td>
+          </tr>
+          <tr>
+            <td>Version</td>
+            <td><i id='f_version'></i></td>
+          </tr>
+          <tr>
+            <td>Compilation Date.</td>
+            <td><i id='f_date'></i></td>
+          </tr>
+        </table>
+      </div>
+      <div class="w3-third">
+
+        <h2>Application Version</h2>
+
+        <table id="status-table" class="w3-table w3-striped w3-white">
+          <tr>
+            <td>Release</td>
+            <td><i id="a_release"></i></td>
+          </tr>
+          <tr>
+            <td>Version</td>
+            <td><i id='a_version'></i></td>
+          </tr>
+          <tr>
+            <td>Compilation Date.</td>
+            <td><i id='a_date'></i></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+
+
+  </div>
+  <iframe id=download-frame style='display:none;'></iframe>
+
+
+  <script src="scripts.js"></script>
+  <script>
+    function getAppInfo() {
+      fetch('/app-info')
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+         
+        });
+    }
+    function getFwInfo() {
+      fetch('/fw-info')
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+          const array = data.replace(/{|}/g, '').split(', ');
+          console.log(array);
+          document.getElementById("f_version").innerHTML = array[1];
+          //separare array[3] by space
+          let array2 = array[0].split(' ');
+       
+          document.getElementById("f_release").innerHTML =array2[0];
+          document.getElementById("f_date").innerHTML = array2[2];
+        });
+    }
+    function getStatus() {
+      fetch('/esp-dash')
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          document.getElementById("ram").innerHTML = data.ram;
+          let seconds = data.uptime % 60;
+          let minutes = Math.floor(data.uptime / 60) % 60
+          let hours = Math.floor(data.uptime / 3600) % 24;
+          let days = Math.floor(data.uptime / 86400);
+          
+          document.getElementById("uptime").innerHTML = days + "d:" + hours + "h:" + minutes + "m:" + seconds;
+          
+          
+          document.getElementById("rssi").innerHTML = data.rssi;
+          document.getElementById("w_version").innerHTML = data.fw;
+          document.getElementById("w_release").innerHTML = data.fw;
+          document.getElementById("w_date").innerHTML = data.dt + data.time;
+          let app_list = ['main_aplication.py', 'data_collection.py', 'data_upload.py'];
+          document.getElementById("app_name").value = app_list[data.app_index];
+        });
+    }
+    getAppInfo();
+    getFwInfo();
+    setInterval(getStatus, 5000);
+    getStatus();
+    var ip_server = "ws://" + location.host + "/serial_k210";
+
+    console.log(ip_server);
+    var socket1 = new WebSocket(ip_server);
+    function run_app() {
+      console.log("run_app");
+      let app_name = document.getElementById("app_name").value;
+
+      socket1.send("run[" + app_name + "]");
+    }
+    function rastart_app() {
+      console.log("run_app");
+
+      socket1.send("cmd[restart_app]");
+    }
+    function stop_app() {
+      console.log("run_app");
+
+      socket1.send("cmd[stop_app]");
+    }
+    function start_capture() {
+      capture_btn = document.getElementById("capture_bt");
+      capture_btn.innerHTML = "Stop Capture";
+      //Ccnage bt color class
+
+      if (capture_btn.innerHTML == "Start Capture") {
+        capture_btn.innerHTML = "Stop Capture";
+        capture_btn.className = "w3-button w3-ripple w3-red";
+
+      }
+      else {
+        capture_btn.innerHTML = "Start Capture";
+        capture_btn.className = "w3-button w3-ripple w3-green";
+
+      }
+      console.log("start_capture");
+
+      socket1.send("cmd[capture]");
+    }
+
+
+
+    var links = [];
+
+    // var e = document.getElementById("folders");
+    // var folderName = e.options[e.selectedIndex].text;
+    // function loadDownload(path) {
+    //   document.getElementById('download-frame').src = "/edit?download=" + path;
+    // }
+
+
+    function downloadAll(urls) {
+      var link = document.createElement('a');
+
+      link.setAttribute('download', null);
+      link.style.display = 'none';
+
+      document.body.appendChild(link);
+
+      for (var i = 0; i < urls.length; i++) {
+        link.setAttribute('href', urls[i]);
+        link.click();
+      }
+
+      document.body.removeChild(link);
+    }
+    function generateZIP() {
+
+      console.log(links);
+      var zip = new JSZip();
+      var count = 0;
+
+      var zipFilename = folderName + ".zip";
+
+
+
+      links.forEach(function (url, i) {
+        var filename = links[i];
+        //  filename = filename.replace(/[\/\*\|\:\<\>\?\"\\]/gi, '').replace("httpsi.imgur.com", "");
+        // loading a file and add it in a zip file
+        console.log(filename);
+        JSZipUtils.getBinaryContent(url, function (err, data) {
+          if (err) {
+            console.log(err);
+            throw err; // or handle the error
+          }
+          zip.file(filename, data, { binary: true });
+          console.log("file add" + count);
+          count++;
+
+          if (count == links.length) {
+            zip.generateAsync({ type: 'blob' }).then(function (content) {
+              saveAs(content, zipFilename);
+            });
+          }
+        });
+      });
+    }
+
+      //status-table fetch this json {"ram":169,"flash":1134352,"mac":"94:B5:55:13:D3:B0","dt":"Jan 15 2023","rssi":-62,"ssid":"TTLink_2.4G","ip":"192.168.1.23","gw":"192.168.1.1","netmask":"255.255.255.0","dns":"0.0.0.0","uptime":708,"ssids":["TTLink_2.4G"," AlticeRouter","Marolvin","Maolv","Altice b3107b","Nuesi","Altice b2fd25","Fernanda","JANYC","ARRIS-6871","","CLAROAWAMT"]} and fill status table using fetch
+
+
+  </script>
+
+</body>
+
+</html>
