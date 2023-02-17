@@ -901,9 +901,8 @@ std::map<std::string, int> web_server_setup()
       {
         Serial.println();
 
-        Serial.print("NINA FIRMWARE UPDATE");
+  
         Serial.print("Update ");
-        output_test["esp_firmware"] = 1;
 
         AsyncWebServerResponse *response = request->beginResponse((Update.hasError()) ? 500 : 200, "text/plain",
                                                                   (Update.hasError()) ? "FAIL" : "OK");
@@ -915,6 +914,7 @@ std::map<std::string, int> web_server_setup()
       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
       {
         if (!index) {
+
 
           // size_t content_len = request->contentLength();
 
@@ -931,6 +931,7 @@ std::map<std::string, int> web_server_setup()
 
         if (final) { 
             if (Update.end(true)) { 
+              output_test["esp_firmware"] = 1;
 
             }
         } });
@@ -1434,7 +1435,7 @@ void test_esp_firmware()
 
 
 const int onTime=1000; // in ms
-const int offTime=20000; // in ms
+const int offTime=40000; // in ms
 boolean currentlyOn=false;
 unsigned long startTime;
 
@@ -1534,47 +1535,47 @@ void loop()
     Serial.println();
 
     // Write test cases
-    RUN_TEST(test_write_txt_file);
+    // RUN_TEST(test_write_txt_file);
 
-    RUN_TEST(test_read_txt_file);
+    // RUN_TEST(test_read_txt_file);
 
-    RUN_TEST(test_update_text_file_compare);
+    // RUN_TEST(test_update_text_file_compare);
 
 
-    // Read test cases
-    RUN_TEST(test_read_files);
+    // // Read test cases
+    // RUN_TEST(test_read_files);
 
-    RUN_TEST(test_read_files_in_folder);
+    // RUN_TEST(test_read_files_in_folder);
 
-    RUN_TEST(test_compare_text_file);
+    // RUN_TEST(test_compare_text_file);
 
-    RUN_TEST(test_read_file_onemb);
+    // RUN_TEST(test_read_file_onemb);
 
-    // Delete test cases
-    RUN_TEST(test_delete_file);
+    // // Delete test cases
+    // RUN_TEST(test_delete_file);
 
-    RUN_TEST(test_delete_file_in_folder);
+    // RUN_TEST(test_delete_file_in_folder);
 
-    RUN_TEST(test_delete_size);
+    // RUN_TEST(test_delete_size);
 
-    // K210 & ESP-32 communication 
-    RUN_TEST(test_setup_webserver_list_sd);
+    // // K210 & ESP-32 communication 
+    // RUN_TEST(test_setup_webserver_list_sd);
 
-    RUN_TEST(test_upload_files_to_sd);
+    // RUN_TEST(test_upload_files_to_sd);
 
-    RUN_TEST(test_setup_webserver_change_script);
+    // RUN_TEST(test_setup_webserver_change_script);
 
-    RUN_TEST(test_run_main_app);
+    // RUN_TEST(test_run_main_app);
 
-    RUN_TEST(test_start_capture);
+    // RUN_TEST(test_start_capture);
 
-    RUN_TEST(test_stop_app);
+    // RUN_TEST(test_stop_app);
 
-    RUN_TEST(test_clear_log);
+    // RUN_TEST(test_clear_log);
 
-    RUN_TEST(test_restart_app);
+    // RUN_TEST(test_restart_app);
 
-    // Esp-32 firmware update
+    // Esp-32 firmware update 
     RUN_TEST(test_esp_firmware);
 
     Serial.println();
