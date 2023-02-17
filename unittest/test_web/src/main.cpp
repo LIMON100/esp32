@@ -19,13 +19,14 @@
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
-#include <ESPAsyncWebServer.h>
 #include <SPIFFSEditor.h>
 #include <EEPROM.h>
 #include "SPIFFS.h"
 #include <ArduinoJson.h>
 // #include "BluetoothSerial.h"
 #include<unity.h>
+#include<iostream>
+
 
 #define BUFFERSIZE 4096
 // SKETCH BEGIN
@@ -110,6 +111,14 @@ typedef enum FS_DELETE{
 }FS_DELETE_STATUS;
 
 
+
+
+int test_a = 0;
+int output_run_main_app = 0;
+int output_stop_app = 0;
+int output_start_capture = 0;
+int output_clear_log = 0;
+int output_reset_main_app = 0;
 
 void wifi_ssids_scan()
 {
@@ -523,8 +532,18 @@ void run_file(String file_name)
   // "####1#1#1#1#1#1#1#1#1#1#1#1#1#1#1#1#1#1#1#1#1");
 }
 
+
+
+
 void onWsEventK210(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
+
+  // output_oneventk210["run_main_app"] = 0;
+  // output_oneventk210["stop_app"] = 0;
+  // output_oneventk210["start_capture"] = 0;
+  // output_oneventk210["clear_log"] = 0;
+
+
   String dataStr;
   for (size_t i = 0; i < len; i++)
   {
@@ -548,40 +567,39 @@ void onWsEventK210(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     if (cmd == "restart_app")
     {
       Serial.println("restart_app");
+      output_reset_main_app = 1;
+
       digitalWrite(RESET_K210, LOW);
       delay(100);
       digitalWrite(RESET_K210, HIGH);
     }
     else if (cmd == "run_app")
-    {                                    //----on
+    {                           
+               //----on
+      output_run_main_app = 1;
       FS_READ_STATUS check_output, file_compare = send_file_to_k210(SD, "/boot.py"); // k210 rest
       // onn
+
       read_boot_py_finish = 1;
       read_boot_py_time = millis();
 
-      Serial.println();
-      if (check_output == 1)
-      {
-        Serial.printf("RUNNING MAIN APPLICATION: FAILED");
-      }
-      Serial.println();
-      if (check_output == 0)
-      {
-        Serial.printf("RUNNING MAIN APPLICATION: PASSED");
-      }
     }
     else if (cmd == "stop_app")
     {
+      output_stop_app = 1;
       Serial2.write(0x03);
       digitalWrite(START_CAP_K210, HIGH);
 
-      if (digitalRead(START_CAP_K210) == LOW) {
-        Serial.printf("CHECK STOP BUTTON WORKING: PASSED");
-      }
+      // if (digitalRead(START_CAP_K210) == LOW) {
+      //   Serial.println();
+      //   Serial.printf("CHECK STOP BUTTON WORKING: PASSED");
+      //   Serial.println();
+      // }
     }
 
     else if (cmd == "capture")
     {
+      output_start_capture = 1;
       digitalWrite(START_CAP_K210, LOW);
       delay(100);
       digitalWrite(START_CAP_K210, HIGH);
@@ -596,19 +614,11 @@ void onWsEventK210(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEven
     }
     else if (cmd == "clear_log")
     {
+      output_clear_log = 1;
       FS_DELETE_STATUS check_delete = deleteFile(SPIFFS, "/log_k210.txt");
       
       const char* path= "/log_k210.txt";
-      FS_READ_STATUS read_expected = send_file_to_k210(SD, path);
-
-      if (check_delete == read_expected)
-      {
-        Serial.printf("FILE DELETED: PASSED");
-      }
-      else
-      {
-        Serial.printf("FILE DELETED: FAILED");
-      }
+      send_file_to_k210(SD, path);
 
       writeFile(SPIFFS, "/log_k210.txt", "");
 
@@ -664,9 +674,12 @@ String write_app_index(String index)
   return "1";
 }
 
-void web_server_setup()
+std::map<std::string, int> output_test;
+
+std::map<std::string, int> web_server_setup()
 {
 
+  
   // Send OTA events to the browser
   ArduinoOTA.onStart([]()
                      { events.send("Update Start", "ota"); });
@@ -703,6 +716,7 @@ void web_server_setup()
 
   server.serveStatic("/", FFS, "/").setDefaultFile("index.html");
 
+  output_test["detect_sd_files"] = 0;
   server.onNotFound([](AsyncWebServerRequest *request)
                     {
     Serial.printf("NOT_FOUND: ");
@@ -738,8 +752,11 @@ void web_server_setup()
 
     int params = request->params();
     for(i=0;i<params;i++){
+      
+      Serial.println("INSIDE ..ARAMSS.. FOR SD");
       AsyncWebParameter* p = request->getParam(i);
       if(p->isFile()){
+        output_test["detect_sd_files"] = 1;
         Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
       } else if(p->isPost()){
         Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
@@ -749,13 +766,18 @@ void web_server_setup()
     }
 
     request->send(404); });
+
+  output_test["upload_files"] = 0;
   server.onFileUpload([](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final)
-                      {
+    {
+
+    output_test["upload_files"] = 1;
     if(!index)
       Serial.printf("UploadStart: %s\n", filename.c_str());
     Serial.printf("%s", (const char*)data);
     if(final)
       Serial.printf("UploadEnd: %s (%u)\n", filename.c_str(), index+len); });
+
   server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
                        {
     if(!index)
@@ -809,10 +831,7 @@ void web_server_setup()
                       EEPROM.commit();
                       Serial.println("Config Done");
                 }
-                
-           
-                
-
+              
               }
             
 
@@ -825,9 +844,10 @@ void web_server_setup()
               run_folder("/flash");
            
 
-            String output;
+              String output;
               serializeJson(doc, output);
               request->send(200, "application/json", output); });
+
   server.on("/esp-dash", HTTP_GET, [](AsyncWebServerRequest *request)
             {
               DynamicJsonDocument doc(1124);
@@ -839,15 +859,16 @@ void web_server_setup()
               doc["rssi"] = WiFi.RSSI();
               doc["fw"] = String(FW_VERSION);          
               doc["app_index"] =    app_index;
-             doc["uptime"] = millis() / 1000;
-
-                 
-                 
-
+              doc["uptime"] = millis() / 1000;
               
-            String output;
+              Serial.printf("FINDING APP_INDEX>>############");
+              Serial.println(app_index);
+              Serial.println();
+                             
+              String output;
               serializeJson(doc, output);
               request->send(200, "application/json", output); });
+
   server.on("/esp-status", HTTP_GET, [](AsyncWebServerRequest *request)
             {
               esp_status_js["ram"] = ESP.getFreeHeap() / 1024;
@@ -864,22 +885,33 @@ void web_server_setup()
               esp_status_js["flash"] = ESP.getFlashChipSize() / 1024;
               esp_status_js["fw"] = String(FW_VERSION);  
 
-            String output;
+              String output;
             
               serializeJson(esp_status_js, output);
               request->send(200, "application/json", output); });
+
   server.on("/settings.html", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(FFS, "/settings.html", String(), false, processor); });
+
+
+  output_test["esp_firmware"] = 0;
   server.on(
+    
       "/update", HTTP_POST, [&](AsyncWebServerRequest *request)
       {
-    Serial.print("Update ");
+        Serial.println();
+
+        Serial.print("NINA FIRMWARE UPDATE");
+        Serial.print("Update ");
+        output_test["esp_firmware"] = 1;
+
         AsyncWebServerResponse *response = request->beginResponse((Update.hasError()) ? 500 : 200, "text/plain",
                                                                   (Update.hasError()) ? "FAIL" : "OK");
         response->addHeader("Connection", "close");
         response->addHeader("Access-Control-Allow-Origin", "*");
         request->send(response);
         restartRequired = true; },
+
       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
       {
         if (!index) {
@@ -894,6 +926,7 @@ void web_server_setup()
 
         if (Update.write(data, len) != len) {
             Update.printError(Serial);
+            output_test["esp_firmware"] = 0;
         }
 
         if (final) { 
@@ -901,32 +934,34 @@ void web_server_setup()
 
             }
         } });
+
   // list avaliable ssid
   server.on("/app-info", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(200, "application/json", k210_app_version); });
+
   server.on("/fw-info", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(200, "application/json", k210_fw_version); });
+
+
+  output_test["change_python_script"] = 0;
   server.on("/start_app", HTTP_GET, [](AsyncWebServerRequest *request)
             {
 
-
               Serial.println("start_app");
-                       String index = request->getParam("start_app")->value();   
+              String index = request->getParam("start_app")->value();   
                       //  set_start_app(index);
               String check_index_update = write_app_index(index);
               
               Serial.println();
-              if (check_index_update == "0")
-              {
-                Serial.printf("switch from main application to data collection application: FAILED");
-              }
-              Serial.println();
               if (check_index_update == "1")
               {
-                Serial.printf("switch from main application to data collection application: PASSED");
+                // Serial.printf("switch from main application to data collection application: FAILED");
+                output_test["change_python_script"] = 1;
               }
+  
 
          request->send(FFS, "/settings.html", String(), false, processor); });
+
   server.on("/to-flash", HTTP_GET, [](AsyncWebServerRequest *request)
             {
               //get path
@@ -936,6 +971,7 @@ void web_server_setup()
               Serial.println("path: " + path);
          
              request->send(FFS, "/edit.html", String(), false, processor); });
+
   server.on("/enable-bt", HTTP_GET, [](AsyncWebServerRequest *request)
             {
                 flash_with_bt = 1;
@@ -958,8 +994,9 @@ void web_server_setup()
 
   server.begin();
 
-
+  return output_test;
 }
+
 void readFileTok210(fs::FS &fs, const char *path)
 {
   Serial.printf("Reading file: %s\n", path);
@@ -978,6 +1015,7 @@ void readFileTok210(fs::FS &fs, const char *path)
   }
   file.close();
 }
+
 void appendFile(fs::FS &fs, const char *path, String message)
 {
   Serial.printf("Appending to file: %s\r\n", path);
@@ -998,6 +1036,7 @@ void appendFile(fs::FS &fs, const char *path, String message)
   }
   file.close();
 }
+
 void serial_esp32(void *arg)
 {
   for (;;)
@@ -1013,6 +1052,7 @@ void serial_esp32(void *arg)
     vTaskDelay(1 / portTICK_PERIOD_MS);
   }
 }
+
 void serial_k210(void *arg)
 {
   for (;;)
@@ -1077,6 +1117,7 @@ void serial_k210(void *arg)
 //     Serial.println("To stop it, disconnect the board from power and connect it again");
 //   }
 // }
+
 void read_app_index()
 {
   File file = SD.open("/app_index.json");
@@ -1095,6 +1136,7 @@ void read_app_index()
 
   app_index = json_file[16] - '0';
 }
+
 void read_k210_fw_version()
 {
   File file = SD.open("/fw_info.json");
@@ -1111,6 +1153,7 @@ void read_k210_fw_version()
   }
   file.close();
 }
+
 void read_k210_app_version()
 {
   File file = SD.open("/current_app_ver.json");
@@ -1127,6 +1170,273 @@ void read_k210_app_version()
   }
   file.close();
 }
+
+
+
+
+void setUp(void)
+{
+  const char* path= "/hello.txt";
+  const char* message = "Hello";
+
+  FS_WRITE_STATUS write_expected =  writeFile(SD, path, message);
+ 
+}
+
+void tearDown(void)
+{
+  remove("/hello.txt");
+}
+
+
+
+//  TEST CASES 
+
+void test_write_txt_file()
+{
+  const char* path= "/hello.txt";
+  const char* message = "Hello";
+
+  
+  FS_WRITE_STATUS write_expected =  writeFile(SD, path, message);
+  // FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path);
+
+  // Write file
+  TEST_ASSERT_EQUAL_UINT8 (write_expected, 1);
+  
+}
+
+void test_read_txt_file()
+{
+  const char* path= "/hello.txt";
+ 
+  FS_READ_STATUS read_expected = send_file_to_k210(SD, path);
+
+  // Read the file
+  TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
+}
+
+void test_compare_text_file()
+{
+  const char* path= "/hello.txt";
+  const char* message = "Llama";
+ 
+  FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path);
+
+  // Read data
+  TEST_ASSERT_EQUAL_UINT8 (read_expected_data, 4);
+}
+
+
+void test_update_text_file_compare()
+{
+  boot_py="";
+  const char* path= "/hello.txt";
+  const char* message_append = "jumpwatts, LA";
+  
+  appendFile(SD, path, message_append);
+  send_file_to_k210(SD, path); 
+  const char* expected = "Hello jumpwatts, LA";
+  const char* actual = boot_py.c_str ();
+  TEST_ASSERT_EQUAL_STRING (expected, actual);
+}
+
+
+void test_read_files_in_folder()
+{
+  const char* path= "/Images/Logo/llamalogo.jpg";
+ 
+  FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path);
+
+  TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
+}
+
+void test_read_files()
+{
+  const char* path= "/main_app.py";
+ 
+  FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path);
+
+  TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
+}
+
+
+void test_delete_file()
+{
+  const char* path= "/test_file_5.txt";
+
+  send_file_to_k210(SD, path);
+  FS_DELETE_STATUS expected = deleteFile(SD, path);
+  FS_READ_STATUS read_delete = send_file_to_k210(SD, path);
+
+  // Delete file
+  TEST_ASSERT_EQUAL_INT (expected, 0);
+
+  // check file is deleted or not
+  TEST_ASSERT_EQUAL_INT (read_delete, 0);
+}
+
+void test_delete_file_in_folder()
+{
+  const char* path= "/test_folder/0.wav";
+
+  send_file_to_k210(SD, path);
+  FS_DELETE_STATUS expected = deleteFile(SD, path);
+  FS_READ_STATUS read_delete = send_file_to_k210(SD, path);
+
+  // Delete file
+  TEST_ASSERT_EQUAL_INT (expected, 0);
+
+  // check file is deleted or not
+  TEST_ASSERT_EQUAL_INT (read_delete, 0);
+}
+
+
+void test_delete_size()
+{
+  const char* path= "/test_folder/test.zip";
+
+  send_file_to_k210(SD, path);
+  FS_DELETE_STATUS expected = deleteFile(SD, path);
+  FS_READ_STATUS read_delete = send_file_to_k210(SD, path);
+
+  // Delete file
+  TEST_ASSERT_EQUAL_INT (expected, 0);
+
+  // check file is deleted or not
+  TEST_ASSERT_EQUAL_INT (read_delete, 0);
+}
+
+void test_read_file_onemb()
+{
+
+  const char* path= "/firmware.bin";
+ 
+  FS_READ_STATUS read_expected = send_file_to_k210(SD, path);
+
+  TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
+}
+
+// void test_read_file_threemb()
+// {
+
+//   const char* path= "/models.kfpkg";
+ 
+//   FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path);
+
+//   TEST_ASSERT_EQUAL_UINT8 (read_expected, 1);
+// }
+
+
+void test_run_main_app()
+{
+  TEST_ASSERT_EQUAL_UINT8 (output_run_main_app, 1);
+}
+
+void test_start_capture()
+{
+  TEST_ASSERT_EQUAL_UINT8 (output_stop_app, 1);
+}
+
+void test_stop_app()
+{
+  TEST_ASSERT_EQUAL_UINT8 (output_start_capture, 1);
+}
+
+void test_clear_log()
+{
+  TEST_ASSERT_EQUAL_UINT8 (output_clear_log, 1);
+}
+
+void test_restart_app()
+{
+  TEST_ASSERT_EQUAL_UINT8 (output_reset_main_app, 1);
+}
+
+
+void test_setup_webserver_list_sd()
+{
+  std::map<std::string, int> output;
+	output = web_server_setup();
+
+  std::map<std::string, int>::iterator it1 = output.begin();
+
+  while (it1 != output.end()) 
+  {
+    
+    if (it1->first == "detect_sd_files")
+    {
+      TEST_ASSERT_EQUAL(1, it1->second);
+    }
+    ++it1;
+    
+  }
+}
+
+void test_upload_files_to_sd()
+{
+  std::map<std::string, int> output;
+	output = web_server_setup();
+
+  std::map<std::string, int>::iterator it1 = output.begin();
+
+  while (it1 != output.end()) 
+  {
+    
+    if (it1->first == "upload_files")
+    {
+      TEST_ASSERT_EQUAL(1, it1->second);
+    }
+    ++it1;
+    
+  }
+}
+
+void test_setup_webserver_change_script()
+{
+  std::map<std::string, int> output;
+	output = web_server_setup();
+
+  std::map<std::string, int>::iterator it1 = output.begin();
+
+  while (it1 != output.end()) 
+  {
+     std::cout << it1->first << ", return: " << it1->second << std:: endl;
+    if (it1->first == "change_python_script")
+    {
+      TEST_ASSERT_EQUAL(1, it1->second);
+    }
+    ++it1;
+    
+  }
+}
+
+
+
+void test_esp_firmware()
+{
+  std::map<std::string, int> output;
+	output = web_server_setup();
+
+  std::map<std::string, int>::iterator it1 = output.begin();
+
+  while (it1 != output.end()) 
+  {
+     std::cout << it1->first << ", return: " << it1->second << std:: endl;
+    if (it1->first == "esp_firmware")
+    {
+      TEST_ASSERT_EQUAL(1, it1->second);
+    }
+    ++it1;
+    
+  }
+}
+
+
+const int onTime=1000; // in ms
+const int offTime=20000; // in ms
+boolean currentlyOn=false;
+unsigned long startTime;
 
 void setup()
 {
@@ -1145,6 +1455,7 @@ void setup()
   sdcard_state = initSDCard();
   read_app_index();
   read_k210_fw_version();
+
   if (!SPIFFS.begin(true))
   {
     Serial.println("An Error has occurred while mounting SPIFFS");
@@ -1182,9 +1493,11 @@ void setup()
     xTaskCreatePinnedToCore(serial_esp32, "taskEsp32", 10000, NULL, 1, NULL, 1);
   }
   wifi_ssids_scan();
-  // UNITY_BEGIN();
-  // UNITY_END();
+
+  startTime=millis();
+  
 }
+
 void loop()
 {
 
@@ -1209,7 +1522,74 @@ void loop()
     }
   }
 
+
+  if (currentlyOn && millis()>startTime+onTime){ // Switch resistor off
+    currentlyOn=false;
+    startTime=millis(); // Reset timer
+  }
+  if (!currentlyOn && millis()>startTime+offTime){ // Switch resistor on
+    UNITY_BEGIN();
+
+    Serial.println();
+    Serial.println();
+
+    // Write test cases
+    RUN_TEST(test_write_txt_file);
+
+    RUN_TEST(test_read_txt_file);
+
+    RUN_TEST(test_update_text_file_compare);
+
+
+    // Read test cases
+    RUN_TEST(test_read_files);
+
+    RUN_TEST(test_read_files_in_folder);
+
+    RUN_TEST(test_compare_text_file);
+
+    RUN_TEST(test_read_file_onemb);
+
+    // Delete test cases
+    RUN_TEST(test_delete_file);
+
+    RUN_TEST(test_delete_file_in_folder);
+
+    RUN_TEST(test_delete_size);
+
+    // K210 & ESP-32 communication 
+    RUN_TEST(test_setup_webserver_list_sd);
+
+    RUN_TEST(test_upload_files_to_sd);
+
+    RUN_TEST(test_setup_webserver_change_script);
+
+    RUN_TEST(test_run_main_app);
+
+    RUN_TEST(test_start_capture);
+
+    RUN_TEST(test_stop_app);
+
+    RUN_TEST(test_clear_log);
+
+    RUN_TEST(test_restart_app);
+
+    // Esp-32 firmware update
+    RUN_TEST(test_esp_firmware);
+
+    Serial.println();
+    Serial.println();
+
+    UNITY_END();
+
+    currentlyOn=true;
+    startTime=millis(); // Reset timer
+  }
+
+  delay(10);
+
   ArduinoOTA.handle();
   ws.cleanupClients();
   vTaskDelay(10 / portTICK_PERIOD_MS);
 }
+
