@@ -717,6 +717,7 @@ std::map<std::string, int> web_server_setup()
   server.serveStatic("/", FFS, "/").setDefaultFile("index.html");
 
   output_test["detect_sd_files"] = 0;
+  output_test["read_sd_files"] = 0;
   server.onNotFound([](AsyncWebServerRequest *request)
                     {
     Serial.printf("NOT_FOUND: ");
@@ -753,10 +754,12 @@ std::map<std::string, int> web_server_setup()
     int params = request->params();
     for(i=0;i<params;i++){
       
+      // When press create it come here
       Serial.println("INSIDE ..ARAMSS.. FOR SD");
+      output_test["detect_sd_files"] = 1;
       AsyncWebParameter* p = request->getParam(i);
       if(p->isFile()){
-        output_test["detect_sd_files"] = 1;
+        output_test["read_sd_files"] = 1;
         Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
       } else if(p->isPost()){
         Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
@@ -770,8 +773,9 @@ std::map<std::string, int> web_server_setup()
   output_test["upload_files"] = 0;
   server.onFileUpload([](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final)
     {
-
+    
     output_test["upload_files"] = 1;
+
     if(!index)
       Serial.printf("UploadStart: %s\n", filename.c_str());
     Serial.printf("%s", (const char*)data);
@@ -965,6 +969,9 @@ std::map<std::string, int> web_server_setup()
 
   server.on("/to-flash", HTTP_GET, [](AsyncWebServerRequest *request)
             {
+              Serial.println();
+              Serial.println("SD FILES SEEING.........************!!!!!!!!!!");
+              Serial.println();
               //get path
               String path = request->getParam("path")->value();
             //print path
@@ -1374,6 +1381,25 @@ void test_setup_webserver_list_sd()
   }
 }
 
+void test_read_sd_file()
+{
+  std::map<std::string, int> output;
+	output = web_server_setup();
+
+  std::map<std::string, int>::iterator it1 = output.begin();
+
+  while (it1 != output.end()) 
+  {
+    
+    if (it1->first == "read_sd_files")
+    {
+      TEST_ASSERT_EQUAL(1, it1->second);
+    }
+    ++it1;
+    
+  }
+}
+
 void test_upload_files_to_sd()
 {
   std::map<std::string, int> output;
@@ -1528,6 +1554,7 @@ void loop()
     currentlyOn=false;
     startTime=millis(); // Reset timer
   }
+  
   if (!currentlyOn && millis()>startTime+offTime){ // Switch resistor on
     UNITY_BEGIN();
 
@@ -1535,45 +1562,47 @@ void loop()
     Serial.println();
 
     // Write test cases
-    // RUN_TEST(test_write_txt_file);
+    RUN_TEST(test_write_txt_file);
 
-    // RUN_TEST(test_read_txt_file);
+    RUN_TEST(test_read_txt_file);
 
-    // RUN_TEST(test_update_text_file_compare);
+    RUN_TEST(test_update_text_file_compare);
 
 
-    // // Read test cases
-    // RUN_TEST(test_read_files);
+    // Read test cases
+    RUN_TEST(test_read_files);
 
-    // RUN_TEST(test_read_files_in_folder);
+    RUN_TEST(test_read_files_in_folder);
 
-    // RUN_TEST(test_compare_text_file);
+    RUN_TEST(test_compare_text_file);
 
-    // RUN_TEST(test_read_file_onemb);
+    RUN_TEST(test_read_file_onemb);
 
-    // // Delete test cases
-    // RUN_TEST(test_delete_file);
+    // Delete test cases
+    RUN_TEST(test_delete_file);
 
-    // RUN_TEST(test_delete_file_in_folder);
+    RUN_TEST(test_delete_file_in_folder);
 
-    // RUN_TEST(test_delete_size);
+    RUN_TEST(test_delete_size);
 
-    // // K210 & ESP-32 communication 
-    // RUN_TEST(test_setup_webserver_list_sd);
+    // K210 & ESP-32 communication 
+    RUN_TEST(test_setup_webserver_list_sd);
 
-    // RUN_TEST(test_upload_files_to_sd);
+    RUN_TEST(test_read_sd_file);
 
-    // RUN_TEST(test_setup_webserver_change_script);
+    RUN_TEST(test_upload_files_to_sd);
 
-    // RUN_TEST(test_run_main_app);
+    RUN_TEST(test_setup_webserver_change_script);
 
-    // RUN_TEST(test_start_capture);
+    RUN_TEST(test_run_main_app);
 
-    // RUN_TEST(test_stop_app);
+    RUN_TEST(test_start_capture);
 
-    // RUN_TEST(test_clear_log);
+    RUN_TEST(test_stop_app);
 
-    // RUN_TEST(test_restart_app);
+    RUN_TEST(test_clear_log);
+
+    RUN_TEST(test_restart_app);
 
     // Esp-32 firmware update 
     RUN_TEST(test_esp_firmware);
