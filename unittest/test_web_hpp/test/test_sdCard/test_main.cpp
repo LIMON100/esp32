@@ -1,4 +1,5 @@
-// #include <sd_card.hpp>
+// Unittest for esp32 - By: limon - Mon Mar 13 2023
+
 #include "main.cpp"
 #include <unity.h>
 #include <iostream>
@@ -58,15 +59,6 @@ const char* copy_test_suite = "Copy files";
 const char* copy_fn = "Copy file from one place to another and check the files copied successfully or not";
 
 
-std::map<std::string, int> output_for_html = 
-{
-  { "write_app_index", 1 },
-  { "compare_app_index", 1 },
-  { "create_text_file", 1}
-};
-
-
-
 void test_create_txt_file()
 {
   const char* path= "/hello.txt";
@@ -92,9 +84,9 @@ void test_read_txt_file()
 
   const char* test_suite = "Write in SD card";
   const char* fn = "create text file";
-  const char* asertion = "Read the created text file in sd card and return 1";
+  const char* asertion = "Read the created text file in sd cards";
   definition_test_name(SD, html_path, test_suite, write_fn, write_test);
-  multiple_condition_result(SD, html_path, read_expected, 1, asertion);
+  multiple_condition_result(SD, html_path, read_expected, 4, asertion);
 
   // Read the file
   TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
@@ -126,7 +118,7 @@ void test_compare_text_file()
 
   const char* asertion = "Compare expected text written in text file";
   definition_test_name(SD, html_path, write_test_suite, write_fn, write_test);
-  multiple_condition_result(SD, html_path, read_expected, 1, asertion);
+  multiple_condition_result(SD, html_path, read_expected, 0, asertion);
 
   // Read data
   TEST_ASSERT_EQUAL_UINT8 (read_expected_data, 4);
@@ -390,7 +382,7 @@ void test_scan_wifi()
     
     if (it1->first == "wifi")
     {
-      const char* asertion = "Deleted file size more than 1MB";
+      const char* asertion = "Connect wifi when available";
       definition_test_name(SD, html_path, wifi_test_suite, wifi_fn, wifi_test);
       multiple_condition_result(SD, html_path, it1->second, 1, asertion);
       wifi_test = 1;
@@ -398,9 +390,10 @@ void test_scan_wifi()
     }
     if (it1->first == "no_wifi")
     {
-      const char* asertion = "Deleted file size more than 1MB";
+      const char* asertion = "Connect wifi not available";
       definition_test_name(SD, html_path, wifi_test_suite, wifi_fn, wifi_test);
-      multiple_condition_result(SD, html_path, it1->second, 1, asertion);
+      multiple_condition_result(SD, html_path, it1->second, 0, asertion);
+      wifi_test = 1;
       TEST_ASSERT_EQUAL(it1->second, it1->second);
     }
     ++it1;
@@ -422,7 +415,7 @@ void test_init_sd()
     if (it1->first == "detect")
     {
       const char* asertion = "Detect sd card";
-      definition_test_name(SD, html_path, sdInit_test_suite, sdInit_fn, wifi_test);
+      definition_test_name(SD, html_path, sdInit_test_suite, sdInit_fn, init_sd_test);
       multiple_condition_result(SD, html_path, it1->second, 1, asertion);
       init_sd_test = 1;
       TEST_ASSERT_EQUAL(it1->second, it1->second);
@@ -430,7 +423,7 @@ void test_init_sd()
     if (it1->first == "sd_size")
     {
       const char* asertion = "Size of the sd card";
-      definition_test_name(SD, html_path, sdInit_test_suite, sdInit_fn, wifi_test);
+      definition_test_name(SD, html_path, sdInit_test_suite, sdInit_fn, init_sd_test);
       multiple_condition_result(SD, html_path, it1->second, 6000, asertion);
       
       TEST_ASSERT_GREATER_THAN(6000, it1->second);
@@ -470,42 +463,6 @@ void test_run_folder_flash()
 
 }
 
-
-
-void test_copy_file()
-{
-  const char* path= "/main_test.py";
-  std::map<std::string, int> output;
-	output = copy_file(path);
-
-  std::map<std::string, int>::iterator it1 = output.begin();
-
-  while (it1 != output.end()) 
-  {
-    
-    if (it1->first == "copy_file")
-    {
-      const char* asertion = "copy file from one place to another";
-      definition_test_name(SD, html_path, copy_test_suite, copy_fn, copy_test);
-      multiple_condition_result(SD, html_path, 1, 1, asertion);
-      copy_test = 1;
-      TEST_ASSERT_EQUAL(it1->second, it1->second);
-    }
-    ++it1;
-    
-  }
-  // Read that copied file 
-  const char* path2 = "/files_path.py";
-  FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path2);
-
-  const char* asertion = "read copy file in exact location";
-  definition_test_name(SD, html_path, copy_test_suite, copy_fn, copy_test);
-  multiple_condition_result(SD, html_path, read_expected, 0, asertion);
-  copy_test = 1;
-  TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
-
-}
-
 void test_write_app_index()
 {
   const char* html_path= "/esp_ut.html";
@@ -537,62 +494,41 @@ void test_write_app_index()
 
 }
 
-
-void test_make_html_upperbody()
+void test_copy_file()
 {
-  const char* path= "/esp_ut.html";
-  int check = make_html_upperbody(SD, path);
-  TEST_ASSERT_EQUAL_UINT8 (check, 1);
+  const char* path= "/main_test.py";
+  std::map<std::string, int> output;
+	output = copy_file(path);
 
-  std::map<std::string, int>::iterator it1 = output_for_html.begin();
-  while (it1 != output_for_html.end()) 
+  std::map<std::string, int>::iterator it1 = output.begin();
+
+  while (it1 != output.end()) 
   {
-    int value = 0;
-    const char* tst_suite = "Check App Index";
-    const char* fn = "Check app index save correctly or not";
-
-    if (it1->first == "write_app_index")
+    
+    if (it1->first == "copy_file")
     {
-      const char* asertion = "Save app index and return true";
-      definition_test_name(SD, path, tst_suite, fn, value);
-      multiple_condition_result(SD, path, it1->second, 1, asertion);
-      value = 1;
+      const char* asertion = "copy file from one place to another";
+      definition_test_name(SD, html_path, copy_test_suite, copy_fn, copy_test);
+      multiple_condition_result(SD, html_path, 1, 1, asertion);
+      copy_test = 1;
+      TEST_ASSERT_EQUAL(it1->second, it1->second);
     }
-
-    else if (it1->first == "compare_app_index"){
-        value = 1;
-        const char* asertion2 = "Compare app index match or not";
-        definition_test_name(SD, path, tst_suite, fn, value);
-        multiple_condition_result(SD, path, it1->second, 1, asertion2);
-      }
-      ++it1;
+    ++it1;
+    
   }
+  // Read that copied file 
+  const char* path2 = "/files_path.py";
+  FS_READ_STATUS read_expected, read_expected_data = send_file_to_k210(SD, path2);
 
-  std::map<std::string, int>::iterator it2 = output_for_html.begin();
-  while (it2 != output_for_html.end())
-  {
-    int value = 0;
-    const char* tst_suite = "Write Sd card";
-    const char* fn = "text file created or not";
+  const char* asertion = "read copy file in exact location";
+  definition_test_name(SD, html_path, copy_test_suite, copy_fn, copy_test);
+  multiple_condition_result(SD, html_path, read_expected, 0, asertion);
+  end_html(SD, html_path);
 
-    if (it2->first == "create_text_file")
-    {
-      const char* asertion = "Return 1 if text file is created";
-      definition_test_name(SD, html_path, tst_suite, fn, value);
-      multiple_condition_result(SD, html_path, it2->second, 1, asertion);
-    }
-    ++it2;
-  }
+  TEST_ASSERT_EQUAL_UINT8 (read_expected, 0);
 
 }
 
-
-void test_html_file()
-{
-  const char* path= "/esp_ut.html";
-  int check = make_html_upperbody(SD, path);
-  TEST_ASSERT_EQUAL_UINT8 (check, 1);
-}
 
 void setUp(void)
 {
@@ -634,9 +570,9 @@ void setup ()
 
   // // Delete test
   RUN_TEST(test_delete_file);
+  RUN_TEST(test_delete_models);
   RUN_TEST(test_delete_file_in_folder);
   RUN_TEST(test_delete_python_file);
-  RUN_TEST(test_delete_models);
   // // RUN_TEST(test_delete_zip);
 
   // Wifi test
@@ -651,7 +587,6 @@ void setup ()
 
   // Copy test
   RUN_TEST(test_copy_file);
-
 
   UNITY_END();
 }
